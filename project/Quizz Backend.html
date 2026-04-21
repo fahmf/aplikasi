@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="id" dir="ltr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Quizz · Backend Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cairo:wght@600;700&display=swap"/>
+<style>
+:root {
+  --primary: #0d6e5e; --primary-l: #1a9d85; --primary-d: #074a40;
+  --accent: #f5a623; --ink: #1a2e28; --ink2: #4a5c56; --ink3: #8a9a94;
+  --paper: #fefaf0; --alt: #f7f3ea; --border: #e5dfd2;
+  --rose: #e06a6a; --sky: #4a90c2; --purple: #8b5cf6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.6; }
+code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 60px 32px 120px; }
+
+/* Header */
+.hero { background: linear-gradient(160deg, var(--primary), var(--primary-d)); color: white; padding: 60px 32px 50px; margin-bottom: 40px; border-radius: 0 0 32px 32px; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; inset: 0; opacity: 0.1; background-image: radial-gradient(circle at 40px 40px, white 8px, transparent 9px); background-size: 80px 80px; }
+.hero-inner { max-width: 1036px; margin: 0 auto; position: relative; }
+.badge { display: inline-block; padding: 5px 12px; background: rgba(255,255,255,0.2); border-radius: 100px; font-size: 12px; font-weight: 600; margin-bottom: 14px; }
+h1 { font-size: 42px; margin: 0 0 12px; letter-spacing: -0.02em; font-weight: 800; }
+.hero p { font-size: 17px; opacity: 0.9; max-width: 640px; margin: 0; }
+
+h2 { font-size: 28px; margin: 56px 0 18px; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: center; gap: 12px; }
+h2 .num { display: inline-flex; width: 36px; height: 36px; border-radius: 12px; background: var(--primary); color: white; font-size: 16px; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; }
+h3 { font-size: 19px; margin: 32px 0 10px; font-weight: 700; color: var(--primary-d); }
+h4 { font-size: 15px; margin: 18px 0 6px; font-weight: 700; color: var(--ink2); }
+
+p { margin: 0 0 12px; }
+.lead { font-size: 17px; color: var(--ink2); }
+
+/* TOC */
+.toc { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; margin-bottom: 40px; }
+.toc h4 { margin: 0 0 12px; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); }
+.toc ol { margin: 0; padding-right: 18px; columns: 2; column-gap: 28px; font-size: 14px; }
+.toc a { color: var(--ink); text-decoration: none; }
+.toc a:hover { color: var(--primary); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--alt); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink2); font-weight: 700; }
+td code { background: var(--alt); padding: 1px 6px; border-radius: 4px; font-size: 12.5px; color: var(--primary-d); }
+tr:last-child td { border-bottom: none; }
+
+/* Code blocks */
+pre { background: #1a2e28; color: #d9ede6; padding: 18px 22px; border-radius: 14px; overflow-x: auto; font-size: 13px; line-height: 1.7; margin: 12px 0 20px; }
+pre .k { color: #ffb86c; } /* keyword */
+pre .s { color: #a0e8cc; } /* string */
+pre .c { color: #6f8379; font-style: italic; } /* comment */
+pre .t { color: #8ed0ff; } /* type/table */
+pre .f { color: #ff9ac1; } /* function */
+
+/* ERD */
+.erd { background: white; border-radius: 20px; padding: 32px 24px; margin: 20px 0 28px; box-shadow: 0 4px 14px rgba(0,0,0,0.04); overflow-x: auto; border: 1px solid var(--border); }
+.erd svg { display: block; margin: 0 auto; }
+
+/* Cards */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin: 16px 0 24px; }
+.card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+.card h4 { margin: 0 0 6px; color: var(--primary); font-size: 14px; }
+.card p { font-size: 13px; color: var(--ink2); margin: 0; }
+.card .tag { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 600; background: var(--alt); color: var(--ink2); margin-bottom: 6px; }
+
+/* Admin mockup */
+.admin { background: #f4f6f8; border-radius: 20px; border: 1px solid var(--border); overflow: hidden; margin: 18px 0 28px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+.admin-topbar { background: white; padding: 12px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); }
+.admin-logo { font-weight: 800; font-size: 15px; color: var(--primary); }
+.admin-logo .ar { font-family: 'Cairo'; }
+.admin-nav { display: flex; gap: 4px; margin-right: auto; }
+.admin-nav a { padding: 6px 12px; font-size: 13px; color: var(--ink2); text-decoration: none; border-radius: 8px; font-weight: 500; }
+.admin-nav a.active { background: var(--primary); color: white; }
+.admin-body { display: grid; grid-template-columns: 220px 1fr; min-height: 480px; }
+.admin-sidebar { background: white; padding: 18px 14px; border-right: 1px solid var(--border); }
+.admin-sidebar h5 { margin: 0 0 8px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); padding: 0 8px; }
+.admin-sidebar a { display: flex; align-items: center; gap: 10px; padding: 7px 10px; font-size: 13px; color: var(--ink); text-decoration: none; border-radius: 8px; margin-bottom: 2px; }
+.admin-sidebar a.active { background: var(--alt); font-weight: 600; color: var(--primary-d); }
+.admin-sidebar .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink3); }
+.admin-sidebar a.active .dot { background: var(--primary); }
+.admin-main { padding: 22px 28px; background: #f4f6f8; }
+.admin-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.admin-h h3 { margin: 0; font-size: 20px; }
+.admin-h .crumb { font-size: 12px; color: var(--ink3); margin-bottom: 4px; }
+.admin-btn { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; font-family: inherit; }
+.admin-btn.primary { background: var(--primary); color: white; }
+.admin-btn.ghost { background: white; color: var(--ink); border: 1px solid var(--border); }
+
+.admin-panel { background: white; border-radius: 14px; padding: 18px 20px; border: 1px solid var(--border); margin-bottom: 14px; }
+.admin-panel h4 { margin: 0 0 14px; font-size: 14px; color: var(--ink); font-weight: 700; }
+.form-row { display: grid; grid-template-columns: 140px 1fr; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.form-row:last-child { border-bottom: none; }
+.form-row label { font-size: 12px; font-weight: 600; color: var(--ink2); padding-top: 6px; }
+.form-row .fake-input { background: var(--alt); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--ink); }
+.form-row .fake-input.ar { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; font-size: 15px; }
+.form-row select.fake-input { width: 100%; }
+.opt-row { display: grid; grid-template-columns: 24px 1fr 24px; gap: 10px; padding: 6px 0; align-items: center; }
+.opt-row .letter { width: 24px; height: 24px; border-radius: 8px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+.opt-row.correct .letter { background: var(--accent); }
+.opt-row .check { color: var(--accent); font-weight: 800; }
+
+.pill { display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; }
+.pill.g { background: #d4ede5; color: var(--primary-d); }
+.pill.y { background: #fceac2; color: #8a6d1f; }
+.pill.r { background: #f7d4d4; color: #8a3030; }
+.pill.b { background: #d4e3f0; color: #1e4a6e; }
+
+.table-admin td { font-size: 13px; }
+.table-admin .action { color: var(--primary); cursor: pointer; font-weight: 600; font-size: 12px; }
+
+/* Endpoints */
+.ep { display: flex; gap: 10px; align-items: baseline; font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+.ep .m { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; font-family: inherit; min-width: 52px; text-align: center; }
+.ep .m.get { background: #d4e3f0; color: #1e4a6e; }
+.ep .m.post { background: #d4ede5; color: var(--primary-d); }
+.ep .m.put { background: #fceac2; color: #8a6d1f; }
+.ep .m.del { background: #f7d4d4; color: #8a3030; }
+.ep .d { color: var(--ink3); font-family: 'Inter', sans-serif; font-size: 12px; margin-right: auto; }
+
+.note { background: #fceac2; border-right: 4px solid var(--accent); padding: 14px 18px; border-radius: 10px; margin: 16px 0; font-size: 13.5px; }
+.note strong { color: #6e531a; }
+
+.flow-steps { counter-reset: step; display: flex; flex-direction: column; gap: 8px; margin: 16px 0 24px; }
+.flow-step { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; background: white; border-radius: 12px; border: 1px solid var(--border); }
+.flow-step::before { counter-increment: step; content: counter(step); flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+.flow-step h5 { margin: 0 0 2px; font-size: 14px; font-weight: 700; }
+.flow-step p { margin: 0; font-size: 13px; color: var(--ink2); }
+
+a.back { display: inline-block; margin-bottom: 20px; color: var(--primary); font-weight: 600; text-decoration: none; font-size: 14px; }
+a.back:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="badge">Technical Design · v1.0</span>
+    <h1>Quizz — Backend Architecture</h1>
+    <p>Dokumen teknis untuk aplikasi quiz bahasa Arab dengan gamifikasi. Mencakup skema database, API, admin panel untuk input soal & pengelolaan materi, serta alur data dari murid hingga leaderboard.</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+<a href="Quizz Hi-Fi.html" class="back">← Kembali ke Hi-Fi Prototype</a>
+
+<div class="toc">
+<h4>Daftar Isi</h4>
+<ol>
+  <li><a href="#overview">Ringkasan Sistem</a></li>
+  <li><a href="#erd">ERD & Entitas</a></li>
+  <li><a href="#schema">Skema Database (SQL)</a></li>
+  <li><a href="#api">API Endpoints</a></li>
+  <li><a href="#admin">Admin Panel Mockup</a></li>
+  <li><a href="#flow">Alur Input Soal</a></li>
+  <li><a href="#gamif">Logika Gamifikasi</a></li>
+  <li><a href="#stack">Rekomendasi Stack</a></li>
+</ol>
+</div>
+
+<h2 id="overview"><span class="num">1</span> Ringkasan Sistem</h2>
+<p class="lead">Sistem terdiri dari 3 komponen: <strong>Mobile App</strong> (murid), <strong>Admin Web Panel</strong> (ustadz/pengajar), dan <strong>API Backend</strong> (single source of truth).</p>
+
+<div class="card-grid">
+  <div class="card"><div class="tag">👤 Aktor</div><h4>Murid (Student)</h4><p>Login, pilih pelajaran, kerjakan wahdah, lihat progress & leaderboard, kumpulkan XP dan badge.</p></div>
+  <div class="card"><div class="tag">👨‍🏫 Aktor</div><h4>Ustadz (Admin)</h4><p>Kelola pelajaran, wahdah, soal; pantau progress murid per kelas; review jawaban salah.</p></div>
+  <div class="card"><div class="tag">🔧 Aktor</div><h4>Super Admin</h4><p>Kelola ustadz, kelas/fashl, konfigurasi gamifikasi (XP rules, badge tiers).</p></div>
+</div>
+
+<h3>Alur data inti</h3>
+<div class="flow-steps">
+  <div class="flow-step"><div><h5>Admin buat konten</h5><p>Ustadz via admin panel: buat Pelajaran → tambah Wahdah → input Soal (pilihan ganda, susun kata, cocokkan).</p></div></div>
+  <div class="flow-step"><div><h5>Murid daftar & pilih pelajaran</h5><p>Student register, pilih pelajaran yang tersedia (Qiraah/Imla'/Balaghah) dan otomatis enroll ke Wahdah 1.</p></div></div>
+  <div class="flow-step"><div><h5>Kerjakan Wahdah</h5><p>Sistem serve 10 soal dari bank soal Wahdah tsb; tiap jawaban dicatat ke <code>attempts</code>; nyawa (hearts) berkurang jika salah.</p></div></div>
+  <div class="flow-step"><div><h5>Selesai → hitung skor & XP</h5><p>Skor ≥70% = lulus → buka Wahdah berikutnya + tambah XP + cek badge baru + update leaderboard.</p></div></div>
+  <div class="flow-step"><div><h5>Checkpoint tiap 4 Wahdah</h5><p>Tes menyeluruh 20 soal (campuran dari 4 Wahdah terakhir); harus lulus 70% untuk lanjut.</p></div></div>
+</div>
+
+<h2 id="erd"><span class="num">2</span> ERD & Entitas Utama</h2>
+<p>Berikut 9 tabel inti dengan relasi antar entitas:</p>
+
+<div class="erd">
+<svg width="1000" height="560" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .tbl { fill: white; stroke: #0d6e5e; stroke-width: 1.5; }
+    .tbl-hdr { fill: #0d6e5e; }
+    .tbl-hdr-text { fill: white; font: 700 13px Inter, sans-serif; }
+    .tbl-row { font: 500 11.5px 'JetBrains Mono', monospace; fill: #1a2e28; }
+    .tbl-row.pk { font-weight: 700; fill: #f5a623; }
+    .tbl-row.fk { fill: #4a90c2; }
+    .rel { stroke: #8a9a94; stroke-width: 1.4; fill: none; stroke-dasharray: 4 3; }
+    .rel-label { font: 600 10px Inter; fill: #4a5c56; }
+    .note-text { font: 600 10px Inter; fill: #8a9a94; }
+  </style>
+
+  <!-- users -->
+  <g>
+    <rect class="tbl" x="20" y="20" width="180" height="130" rx="8"/>
+    <rect class="tbl-hdr" x="20" y="20" width="180" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="20" y="30" width="180" height="16"/>
+    <text class="tbl-hdr-text" x="34" y="38">users</text>
+    <text class="tbl-row pk" x="34" y="64">🔑 id (uuid)</text>
+    <text class="tbl-row" x="34" y="82">email · username</text>
+    <text class="tbl-row" x="34" y="98">password_hash</text>
+    <text class="tbl-row" x="34" y="114">role: student|admin</text>
+    <text class="tbl-row fk" x="34" y="132">class_id → classes</text>
+  </g>
+
+  <!-- classes -->
+  <g>
+    <rect class="tbl" x="20" y="190" width="180" height="90" rx="8"/>
+    <rect class="tbl-hdr" x="20" y="190" width="180" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="20" y="200" width="180" height="16"/>
+    <text class="tbl-hdr-text" x="34" y="208">classes (فصل)</text>
+    <text class="tbl-row pk" x="34" y="234">🔑 id</text>
+    <text class="tbl-row" x="34" y="250">name · year</text>
+    <text class="tbl-row fk" x="34" y="266">teacher_id → users</text>
+  </g>
+
+  <!-- lessons -->
+  <g>
+    <rect class="tbl" x="260" y="20" width="180" height="110" rx="8"/>
+    <rect class="tbl-hdr" x="260" y="20" width="180" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="260" y="30" width="180" height="16"/>
+    <text class="tbl-hdr-text" x="274" y="38">lessons (درس)</text>
+    <text class="tbl-row pk" x="274" y="64">🔑 id</text>
+    <text class="tbl-row" x="274" y="82">code (qiraah/imla/..)</text>
+    <text class="tbl-row" x="274" y="98">name_ar · description</text>
+    <text class="tbl-row" x="274" y="114">level · icon · color</text>
+  </g>
+
+  <!-- units -->
+  <g>
+    <rect class="tbl" x="500" y="20" width="180" height="130" rx="8"/>
+    <rect class="tbl-hdr" x="500" y="20" width="180" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="500" y="30" width="180" height="16"/>
+    <text class="tbl-hdr-text" x="514" y="38">units (وحدة)</text>
+    <text class="tbl-row pk" x="514" y="64">🔑 id</text>
+    <text class="tbl-row fk" x="514" y="82">lesson_id → lessons</text>
+    <text class="tbl-row" x="514" y="98">number · title_ar</text>
+    <text class="tbl-row" x="514" y="114">is_checkpoint: bool</text>
+    <text class="tbl-row" x="514" y="130">passing_score (%)</text>
+  </g>
+
+  <!-- questions -->
+  <g>
+    <rect class="tbl" x="740" y="20" width="230" height="160" rx="8"/>
+    <rect class="tbl-hdr" x="740" y="20" width="230" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="740" y="30" width="230" height="16"/>
+    <text class="tbl-hdr-text" x="754" y="38">questions (سؤال)</text>
+    <text class="tbl-row pk" x="754" y="64">🔑 id</text>
+    <text class="tbl-row fk" x="754" y="82">unit_id → units</text>
+    <text class="tbl-row" x="754" y="98">type: mcq|arrange|match</text>
+    <text class="tbl-row" x="754" y="114">prompt_ar (text)</text>
+    <text class="tbl-row" x="754" y="130">explanation_ar</text>
+    <text class="tbl-row" x="754" y="146">xp_reward · order</text>
+    <text class="tbl-row" x="754" y="162">media_url (audio/img)</text>
+  </g>
+
+  <!-- choices -->
+  <g>
+    <rect class="tbl" x="740" y="220" width="230" height="106" rx="8"/>
+    <rect class="tbl-hdr" x="740" y="220" width="230" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="740" y="230" width="230" height="16"/>
+    <text class="tbl-hdr-text" x="754" y="238">choices (خيار)</text>
+    <text class="tbl-row pk" x="754" y="264">🔑 id</text>
+    <text class="tbl-row fk" x="754" y="282">question_id → questions</text>
+    <text class="tbl-row" x="754" y="298">text_ar · is_correct</text>
+    <text class="tbl-row" x="754" y="314">order · pair_key</text>
+  </g>
+
+  <!-- attempts -->
+  <g>
+    <rect class="tbl" x="500" y="220" width="200" height="130" rx="8"/>
+    <rect class="tbl-hdr" x="500" y="220" width="200" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="500" y="230" width="200" height="16"/>
+    <text class="tbl-hdr-text" x="514" y="238">attempts (محاولة)</text>
+    <text class="tbl-row pk" x="514" y="264">🔑 id</text>
+    <text class="tbl-row fk" x="514" y="282">user_id · unit_id</text>
+    <text class="tbl-row" x="514" y="298">score · stars (0-3)</text>
+    <text class="tbl-row" x="514" y="314">xp_earned · passed</text>
+    <text class="tbl-row" x="514" y="330">started_at · finished_at</text>
+  </g>
+
+  <!-- answers -->
+  <g>
+    <rect class="tbl" x="260" y="220" width="200" height="120" rx="8"/>
+    <rect class="tbl-hdr" x="260" y="220" width="200" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="260" y="230" width="200" height="16"/>
+    <text class="tbl-hdr-text" x="274" y="238">answers (إجابة)</text>
+    <text class="tbl-row pk" x="274" y="264">🔑 id</text>
+    <text class="tbl-row fk" x="274" y="282">attempt_id → attempts</text>
+    <text class="tbl-row fk" x="274" y="298">question_id → questions</text>
+    <text class="tbl-row" x="274" y="314">response (jsonb)</text>
+    <text class="tbl-row" x="274" y="330">is_correct · time_ms</text>
+  </g>
+
+  <!-- progress -->
+  <g>
+    <rect class="tbl" x="20" y="320" width="200" height="110" rx="8"/>
+    <rect class="tbl-hdr" x="20" y="320" width="200" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="20" y="330" width="200" height="16"/>
+    <text class="tbl-hdr-text" x="34" y="338">user_progress</text>
+    <text class="tbl-row pk" x="34" y="364">🔑 (user_id, lesson_id)</text>
+    <text class="tbl-row" x="34" y="380">current_unit · total_xp</text>
+    <text class="tbl-row" x="34" y="396">level · streak_days</text>
+    <text class="tbl-row" x="34" y="412">hearts · last_played_at</text>
+  </g>
+
+  <!-- badges -->
+  <g>
+    <rect class="tbl" x="260" y="400" width="200" height="110" rx="8"/>
+    <rect class="tbl-hdr" x="260" y="400" width="200" height="26" rx="8"/>
+    <rect class="tbl-hdr" x="260" y="410" width="200" height="16"/>
+    <text class="tbl-hdr-text" x="274" y="418">badges + user_badges</text>
+    <text class="tbl-row pk" x="274" y="444">🔑 badge.id · icon</text>
+    <text class="tbl-row" x="274" y="460">name_ar · condition</text>
+    <text class="tbl-row" x="274" y="476">(jsonb rule)</text>
+    <text class="tbl-row fk" x="274" y="492">user_badges(user,badge)</text>
+  </g>
+
+  <!-- relations -->
+  <path class="rel" d="M200,85 L260,75"/><text class="rel-label" x="210" y="70">belongs_to</text>
+  <path class="rel" d="M440,75 L500,75"/><text class="rel-label" x="448" y="68">has_many</text>
+  <path class="rel" d="M680,75 L740,75"/><text class="rel-label" x="690" y="68">has_many</text>
+  <path class="rel" d="M855,180 L855,220"/><text class="rel-label" x="862" y="204">has_many</text>
+  <path class="rel" d="M700,280 L740,280"/>
+  <path class="rel" d="M460,280 L500,280"/>
+  <path class="rel" d="M100,150 L100,320"/><text class="rel-label" x="108" y="240">tracks</text>
+  <path class="rel" d="M200,265 L260,265"/>
+  <path class="rel" d="M110,240 L260,242"/>
+</svg>
+</div>
+
+<h2 id="schema"><span class="num">3</span> Skema Database (PostgreSQL)</h2>
+<p>Berikut DDL singkat untuk tabel inti. Gunakan <code>uuid</code> untuk primary key dan <code>jsonb</code> untuk data fleksibel (response soal campuran, badge rules).</p>
+
+<pre><span class="c">-- Pelajaran: Qiraah / Imla' / Balaghah</span>
+<span class="k">CREATE TABLE</span> <span class="t">lessons</span> (
+  id <span class="k">uuid PRIMARY KEY DEFAULT</span> <span class="f">gen_random_uuid</span>(),
+  code <span class="k">text UNIQUE NOT NULL</span>,              <span class="c">-- 'qiraah' | 'imla' | 'balaghah'</span>
+  name_ar <span class="k">text NOT NULL</span>,                 <span class="c">-- 'القراءة'</span>
+  description_ar <span class="k">text</span>,
+  level <span class="k">text</span>,                            <span class="c">-- 'mubtadi' | 'mutawassit' | 'mutaqaddim'</span>
+  icon <span class="k">text</span>, color <span class="k">text</span>,                <span class="c">-- untuk styling UI</span>
+  sort_order <span class="k">int DEFAULT</span> 0,
+  created_at <span class="k">timestamptz DEFAULT now</span>()
+);
+
+<span class="c">-- Wahdah (unit) dalam pelajaran</span>
+<span class="k">CREATE TABLE</span> <span class="t">units</span> (
+  id <span class="k">uuid PRIMARY KEY DEFAULT</span> <span class="f">gen_random_uuid</span>(),
+  lesson_id <span class="k">uuid REFERENCES</span> <span class="t">lessons</span>(id) <span class="k">ON DELETE CASCADE</span>,
+  number <span class="k">int NOT NULL</span>,                    <span class="c">-- 1..8</span>
+  title_ar <span class="k">text NOT NULL</span>,
+  description_ar <span class="k">text</span>,
+  is_checkpoint <span class="k">boolean DEFAULT false</span>,    <span class="c">-- true untuk wahdah 4 & 8</span>
+  passing_score <span class="k">int DEFAULT</span> 70,           <span class="c">-- % minimum</span>
+  xp_reward <span class="k">int DEFAULT</span> 120,
+  <span class="k">UNIQUE</span>(lesson_id, number)
+);
+
+<span class="c">-- Soal; prompt_ar bisa rich (HTML ringan) untuk kata yang diberi warna</span>
+<span class="k">CREATE TABLE</span> <span class="t">questions</span> (
+  id <span class="k">uuid PRIMARY KEY DEFAULT</span> <span class="f">gen_random_uuid</span>(),
+  unit_id <span class="k">uuid REFERENCES</span> <span class="t">units</span>(id) <span class="k">ON DELETE CASCADE</span>,
+  type <span class="k">text NOT NULL</span>,                    <span class="c">-- 'mcq' | 'mcq_harakat' | 'arrange' | 'match'</span>
+  prompt_ar <span class="k">text NOT NULL</span>,
+  explanation_ar <span class="k">text</span>,                   <span class="c">-- ditampilkan setelah jawab</span>
+  media_url <span class="k">text</span>,                         <span class="c">-- audio untuk qiraah / image</span>
+  xp_reward <span class="k">int DEFAULT</span> 10,
+  sort_order <span class="k">int</span>,
+  metadata <span class="k">jsonb DEFAULT</span> <span class="s">'{}'</span>          <span class="c">-- hints, tags, difficulty</span>
+);
+
+<span class="c">-- Opsi jawaban (berlaku untuk mcq, arrange, match)</span>
+<span class="k">CREATE TABLE</span> <span class="t">choices</span> (
+  id <span class="k">uuid PRIMARY KEY DEFAULT</span> <span class="f">gen_random_uuid</span>(),
+  question_id <span class="k">uuid REFERENCES</span> <span class="t">questions</span>(id) <span class="k">ON DELETE CASCADE</span>,
+  text_ar <span class="k">text NOT NULL</span>,
+  is_correct <span class="k">boolean DEFAULT false</span>,       <span class="c">-- untuk mcq</span>
+  sort_order <span class="k">int</span>,                           <span class="c">-- urutan jawaban benar untuk 'arrange'</span>
+  pair_key <span class="k">text</span>                            <span class="c">-- untuk 'match' (pasangan A↔B)</span>
+);
+
+<span class="c">-- Percobaan pengerjaan wahdah</span>
+<span class="k">CREATE TABLE</span> <span class="t">attempts</span> (
+  id <span class="k">uuid PRIMARY KEY DEFAULT</span> <span class="f">gen_random_uuid</span>(),
+  user_id <span class="k">uuid REFERENCES</span> <span class="t">users</span>(id),
+  unit_id <span class="k">uuid REFERENCES</span> <span class="t">units</span>(id),
+  score <span class="k">int</span>,                                <span class="c">-- 0-100</span>
+  stars <span class="k">int CHECK</span> (stars <span class="k">BETWEEN</span> 0 <span class="k">AND</span> 3),
+  xp_earned <span class="k">int</span>,
+  passed <span class="k">boolean</span>,
+  hearts_used <span class="k">int</span>,
+  started_at <span class="k">timestamptz DEFAULT now</span>(),
+  finished_at <span class="k">timestamptz</span>
+);
+
+<span class="c">-- Progress pengguna per pelajaran (denormalized untuk dashboard cepat)</span>
+<span class="k">CREATE TABLE</span> <span class="t">user_progress</span> (
+  user_id <span class="k">uuid REFERENCES</span> <span class="t">users</span>(id),
+  lesson_id <span class="k">uuid REFERENCES</span> <span class="t">lessons</span>(id),
+  current_unit <span class="k">int DEFAULT</span> 1,
+  total_xp <span class="k">int DEFAULT</span> 0,
+  level <span class="k">int DEFAULT</span> 1,
+  streak_days <span class="k">int DEFAULT</span> 0,
+  hearts <span class="k">int DEFAULT</span> 3,
+  last_played_at <span class="k">timestamptz</span>,
+  <span class="k">PRIMARY KEY</span> (user_id, lesson_id)
+);</pre>
+
+<div class="note"><strong>Catatan:</strong> <code>response</code> di tabel <code>answers</code> disimpan sebagai <code>jsonb</code> agar bisa menampung format berbeda — MCQ: <code>{"choice_id": "..."}</code>, Arrange: <code>{"order": ["id1","id2","id3"]}</code>, Match: <code>{"pairs": [["A1","B3"],["A2","B1"]]}</code>.</div>
+
+<h2 id="api"><span class="num">4</span> API Endpoints (ringkasan)</h2>
+
+<h3>Auth & User</h3>
+<div>
+  <div class="ep"><span class="m post">POST</span><span>/api/auth/register</span><span class="d">Daftar murid baru</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/auth/login</span><span class="d">Login, kembalikan JWT</span></div>
+  <div class="ep"><span class="m get">GET</span><span>/api/me</span><span class="d">Profile + XP + level + streak</span></div>
+</div>
+
+<h3>Pelajaran & Konten (murid)</h3>
+<div>
+  <div class="ep"><span class="m get">GET</span><span>/api/lessons</span><span class="d">List pelajaran + progress user</span></div>
+  <div class="ep"><span class="m get">GET</span><span>/api/lessons/:id/units</span><span class="d">List wahdah untuk dashboard (path)</span></div>
+  <div class="ep"><span class="m get">GET</span><span>/api/units/:id/questions</span><span class="d">Ambil 10 soal untuk sesi (tanpa bocorkan is_correct)</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/attempts</span><span class="d">Mulai percobaan baru → kembalikan attempt_id</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/attempts/:id/answer</span><span class="d">Kirim jawaban per soal; server cek & kembalikan feedback</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/attempts/:id/finish</span><span class="d">Selesai; hitung skor, XP, unlock wahdah next</span></div>
+</div>
+
+<h3>Leaderboard & Sosial</h3>
+<div>
+  <div class="ep"><span class="m get">GET</span><span>/api/leaderboard?scope=class|friends&amp;period=week|month|all</span><span class="d">Ranking</span></div>
+  <div class="ep"><span class="m get">GET</span><span>/api/badges</span><span class="d">Badge yang dimiliki + locked</span></div>
+</div>
+
+<h3>Admin (butuh role=admin)</h3>
+<div>
+  <div class="ep"><span class="m get">GET</span><span>/api/admin/lessons</span><span class="d">CRUD pelajaran</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/admin/units</span><span class="d">Tambah wahdah</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/admin/questions</span><span class="d">Tambah soal (beserta choices)</span></div>
+  <div class="ep"><span class="m put">PUT</span><span>/api/admin/questions/:id</span><span class="d">Edit soal</span></div>
+  <div class="ep"><span class="m del">DELETE</span><span>/api/admin/questions/:id</span><span class="d">Hapus soal</span></div>
+  <div class="ep"><span class="m post">POST</span><span>/api/admin/import</span><span class="d">Bulk import dari CSV/Excel</span></div>
+  <div class="ep"><span class="m get">GET</span><span>/api/admin/classes/:id/progress</span><span class="d">Laporan progress per kelas</span></div>
+</div>
+
+<h2 id="admin"><span class="num">5</span> Admin Panel — Mockup Input Soal</h2>
+<p>Halaman utama yang dipakai ustadz untuk mengisi bank soal. Diorganisasi per Pelajaran → Wahdah → Soal.</p>
+
+<div class="admin">
+  <div class="admin-topbar">
+    <div class="admin-logo">Quizz <span class="ar">· لوحة التحكم</span></div>
+    <div class="admin-nav">
+      <a class="active">Konten</a>
+      <a>Pengguna</a>
+      <a>Kelas</a>
+      <a>Laporan</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:12px;color:var(--ink3)">Ustadz Ahmad</span>
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">A</div>
+    </div>
+  </div>
+  <div class="admin-body">
+    <div class="admin-sidebar">
+      <h5>Pelajaran</h5>
+      <a class="active"><span class="dot"></span>القراءة · Qiraah</a>
+      <a><span class="dot"></span>الإملاء · Imla'</a>
+      <a><span class="dot"></span>البلاغة · Balaghah</a>
+      <h5 style="margin-top:16px;">Wahdah (Qiraah)</h5>
+      <a><span class="dot"></span>١ · أساسيات الحروف</a>
+      <a><span class="dot"></span>٢ · الحركات</a>
+      <a><span class="dot"></span>٣ · المفردات</a>
+      <a><span class="dot"></span>٤ · نقطة تفتيش</a>
+      <a class="active"><span class="dot"></span>٥ · الجمل البسيطة</a>
+      <a><span class="dot"></span>٦ · الأزمنة</a>
+    </div>
+    <div class="admin-main">
+      <div class="admin-h">
+        <div>
+          <div class="crumb">القراءة › وحدة ٥ · الجمل البسيطة › Soal</div>
+          <h3>Soal dalam Wahdah 5 <span style="color:var(--ink3);font-weight:500;font-size:14px;">(7 dari 10)</span></h3>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="admin-btn ghost">📥 Import CSV</button>
+          <button class="admin-btn primary">+ Tambah Soal</button>
+        </div>
+      </div>
+
+      <table class="table-admin">
+        <thead><tr><th>#</th><th>Prompt</th><th>Tipe</th><th>Status</th><th>Dikerjakan</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td style="font-family:Cairo;direction:rtl;text-align:right;">ما إعراب الكلمة الملونة؟</td><td><span class="pill b">MCQ I'rab</span></td><td><span class="pill g">Live</span></td><td>142×</td><td><span class="action">Edit</span></td></tr>
+          <tr><td>2</td><td style="font-family:Cairo;direction:rtl;text-align:right;">رتّب الكلمات لتكوين جملة</td><td><span class="pill b">Arrange</span></td><td><span class="pill g">Live</span></td><td>138×</td><td><span class="action">Edit</span></td></tr>
+          <tr><td>3</td><td style="font-family:Cairo;direction:rtl;text-align:right;">صِل كل كلمة بمعناها</td><td><span class="pill b">Match</span></td><td><span class="pill y">Draft</span></td><td>—</td><td><span class="action">Edit</span></td></tr>
+          <tr><td>4</td><td style="font-family:Cairo;direction:rtl;text-align:right;">اختر الجملة الصحيحة نحوياً</td><td><span class="pill b">MCQ</span></td><td><span class="pill g">Live</span></td><td>134×</td><td><span class="action">Edit</span></td></tr>
+          <tr><td>5</td><td style="font-family:Cairo;direction:rtl;text-align:right;">ما نوع هذه الجملة؟</td><td><span class="pill b">MCQ</span></td><td><span class="pill g">Live</span></td><td>131×</td><td><span class="action">Edit</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="admin-panel" style="margin-top:18px;">
+        <h4>Form: Tambah Soal Baru</h4>
+        <div class="form-row"><label>Tipe Soal</label><div><select class="fake-input"><option>MCQ (Pilihan Ganda)</option><option>MCQ I'rab (dengan harakat)</option><option>Arrange (Susun Kata)</option><option>Match (Cocokkan)</option></select></div></div>
+        <div class="form-row"><label>Prompt (عربي)</label><div class="fake-input ar">ما إعراب الكلمة الملونة في الجملة؟</div></div>
+        <div class="form-row"><label>Konteks / Kalimat</label><div class="fake-input ar">ذهبَ <mark style="background:#fceac2;padding:0 4px;border-radius:4px;">الطالبُ</mark> إلى المدرسةِ</div></div>
+        <div class="form-row">
+          <label>Opsi Jawaban</label>
+          <div>
+            <div class="opt-row"><span class="letter">A</span><span class="fake-input ar">فاعل مرفوع بالضمة</span><span></span></div>
+            <div class="opt-row"><span class="letter">B</span><span class="fake-input ar">مفعول به منصوب بالفتحة</span><span></span></div>
+            <div class="opt-row correct"><span class="letter">C</span><span class="fake-input ar" style="background:#fff3d4;border-color:#f5a623;">مبتدأ مرفوع بالضمة</span><span class="check">✓</span></div>
+            <div class="opt-row"><span class="letter">D</span><span class="fake-input ar">فاعل منصوب بالفتحة</span><span></span></div>
+          </div>
+        </div>
+        <div class="form-row"><label>Penjelasan</label><div class="fake-input ar" style="min-height:44px;">الكلمة فاعل لأنها جاءت بعد الفعل "ذهبَ"، وهي مرفوعة بالضمة الظاهرة على آخرها.</div></div>
+        <div class="form-row"><label>XP · Media</label><div style="display:flex;gap:10px;"><span class="fake-input" style="width:80px;">10 XP</span><button class="admin-btn ghost">🎵 + Audio</button><button class="admin-btn ghost">🖼 + Gambar</button></div></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+          <button class="admin-btn ghost">Simpan sebagai Draft</button>
+          <button class="admin-btn primary">Publish ke Wahdah</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3>Fitur admin panel lainnya</h3>
+<div class="card-grid">
+  <div class="card"><div class="tag">📊 Laporan</div><h4>Progress per Kelas</h4><p>Lihat siapa yang stuck di wahdah mana, soal apa yang paling sering salah (untuk review materi).</p></div>
+  <div class="card"><div class="tag">📥 Bulk</div><h4>Import CSV/Excel</h4><p>Template Excel: kolom <code>type, prompt_ar, opt_a..d, correct, explanation</code>. Upload → validasi → preview → publish.</p></div>
+  <div class="card"><div class="tag">🎯 Review</div><h4>Jawaban Salah Terbanyak</h4><p>Daftar soal yang >50% murid salah — indikator soal ambigu atau materi perlu dipertajam.</p></div>
+  <div class="card"><div class="tag">👥 Murid</div><h4>Kelola Pengguna</h4><p>Reset progress individu, tambahkan ke kelas, lihat aktivitas terakhir.</p></div>
+</div>
+
+<h2 id="flow"><span class="num">6</span> Alur Input Soal (admin side)</h2>
+<div class="flow-steps">
+  <div class="flow-step"><div><h5>Pilih pelajaran target</h5><p>Sidebar: Qiraah / Imla' / Balaghah. Jika belum ada, Super Admin buat dulu di menu Pelajaran.</p></div></div>
+  <div class="flow-step"><div><h5>Pilih atau buat Wahdah</h5><p>Minimal 8 wahdah per pelajaran, wahdah ke-4 & ke-8 otomatis ditandai sebagai checkpoint.</p></div></div>
+  <div class="flow-step"><div><h5>Tambah soal (10 per wahdah)</h5><p>Pilih tipe → isi prompt Arab → tambah opsi → tandai jawaban benar → tulis penjelasan → save sebagai Draft.</p></div></div>
+  <div class="flow-step"><div><h5>Preview & uji coba</h5><p>Tombol "Preview sebagai Murid" — render tampilan mobile persis; admin bisa test jalur soal sendiri.</p></div></div>
+  <div class="flow-step"><div><h5>Publish</h5><p>Setelah ≥10 soal lengkap, tombol Publish aktif. Saat publish, wahdah langsung visible untuk murid yang sudah lulus wahdah sebelumnya.</p></div></div>
+</div>
+
+<h2 id="gamif"><span class="num">7</span> Logika Gamifikasi</h2>
+
+<table>
+<thead><tr><th>Elemen</th><th>Formula / Aturan</th></tr></thead>
+<tbody>
+<tr><td><strong>XP per soal</strong></td><td>10 XP (benar pertama kali) · 5 XP (benar setelah salah) · 0 XP (salah)</td></tr>
+<tr><td><strong>XP bonus wahdah lulus</strong></td><td>+50 XP dasar, +30 XP jika tanpa salah, +20 XP jika &lt; waktu target</td></tr>
+<tr><td><strong>XP checkpoint</strong></td><td>+200 XP (lulus), multiplier 2× jika bintang 3</td></tr>
+<tr><td><strong>Level</strong></td><td><code>level = floor(sqrt(total_xp / 100)) + 1</code> — butuh lebih banyak XP tiap level</td></tr>
+<tr><td><strong>Bintang wahdah</strong></td><td>3★ = 100% · 2★ = 80-99% · 1★ = passing_score-79% · 0★ = gagal</td></tr>
+<tr><td><strong>Hearts (nyawa)</strong></td><td>Mulai 3, berkurang 1 tiap salah. Habis = gagal, regen 1/30 menit atau nonton iklan</td></tr>
+<tr><td><strong>Streak</strong></td><td>+1 tiap hari ada aktivitas belajar; reset jika &gt;24 jam tidak aktif</td></tr>
+<tr><td><strong>Badge</strong></td><td>Didefinisikan oleh rule <code>jsonb</code>, contoh: <code>{"type":"streak","value":7}</code> → badge "سلسلة ٧ أيام"</td></tr>
+</tbody>
+</table>
+
+<h2 id="stack"><span class="num">8</span> Rekomendasi Stack</h2>
+
+<div class="card-grid">
+  <div class="card"><div class="tag">🚀 Cepat & Indonesia-friendly</div><h4>Laravel + MySQL + Inertia</h4><p>Paling populer di komunitas dev Indonesia. Laravel handle auth, validasi, admin panel (Filament) nyaris tanpa kode. Deploy ke VPS murah.</p></div>
+  <div class="card"><div class="tag">⚡ No-code friendly</div><h4>Supabase + Next.js</h4><p>Database + Auth + Storage + Realtime leaderboard langsung jadi. Admin panel cukup pakai Supabase Studio, atau build sendiri dengan Retool/Refine.</p></div>
+  <div class="card"><div class="tag">🎯 Type-safe full-stack</div><h4>Node.js + PostgreSQL + Prisma + tRPC</h4><p>Untuk tim dev berpengalaman JS/TS. Schema dibagi antara web & mobile, type aman end-to-end.</p></div>
+  <div class="card"><div class="tag">📱 Mobile</div><h4>React Native (Expo) atau Flutter</h4><p>Dua-duanya bisa handle RTL + font Arab dengan baik. Expo lebih cepat iterate; Flutter lebih smooth untuk animasi gamifikasi.</p></div>
+</div>
+
+<div class="note" style="margin-top:32px;">
+<strong>Rekomendasi:</strong> Untuk pesantren / lembaga kecil-menengah, mulai dengan <strong>Supabase + Next.js (admin) + React Native Expo (mobile)</strong> — bisa running dalam 2-3 minggu dengan 1 developer, biaya hosting gratis sampai beberapa ribu pengguna aktif. Scale up ke Laravel/PostgreSQL penuh kalau sudah > 10k user.
+</div>
+
+<div style="margin-top:60px;padding-top:24px;border-top:1px solid var(--border);color:var(--ink3);font-size:13px;text-align:center;">
+Dokumen hidup · v1.0 · Siap untuk diskusi lebih lanjut atau diturunkan ke tim engineering.
+</div>
+
+</div>
+</body>
+</html>

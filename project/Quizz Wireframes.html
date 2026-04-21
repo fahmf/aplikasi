@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1400"/>
+<title>Quizz · Wireframes</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #f0eee9; font-family: -apple-system, system-ui, sans-serif; }
+  * { box-sizing: border-box; }
+
+  /* Tweaks panel */
+  .tweaks-panel {
+    position: fixed; bottom: 20px; left: 20px; z-index: 1000;
+    background: #faf7f2; border: 1.5px solid #1a1a1a;
+    padding: 14px 16px; min-width: 240px; max-width: 280px;
+    font-family: 'Reem Kufi', system-ui, sans-serif;
+    border-radius: 3px 8px 4px 10px / 8px 3px 10px 4px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    display: none;
+  }
+  .tweaks-panel.open { display: block; }
+  .tweaks-panel h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1.5px solid #1a1a1a; padding-bottom: 6px; }
+  .tweaks-row { margin-bottom: 12px; }
+  .tweaks-row-label { font-size: 11px; color: #6b6b6b; margin-bottom: 4px; }
+  .tweaks-btnrow { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tweaks-btn { border: 1.5px solid #1a1a1a; background: #faf7f2; padding: 5px 10px; font-size: 11px; cursor: pointer; border-radius: 2px; font-family: inherit; }
+  .tweaks-btn.active { background: #1a1a1a; color: #faf7f2; }
+  .tweaks-swatch { width: 24px; height: 24px; border: 1.5px solid #1a1a1a; cursor: pointer; border-radius: 2px; }
+  .tweaks-swatch.active { outline: 2px solid #1a1a1a; outline-offset: 2px; }
+
+  /* Dark mode overlay vars */
+  .dark-mode { filter: invert(1) hue-rotate(180deg); }
+  .dark-mode img, .dark-mode svg { filter: invert(1) hue-rotate(180deg); }
+</style>
+</head>
+<body>
+
+<div class="tweaks-panel" id="tweaks-panel">
+  <h3>Tweaks</h3>
+  <div class="tweaks-row">
+    <div class="tweaks-row-label">Pelajaran aktif</div>
+    <div class="tweaks-btnrow" data-group="lesson"></div>
+  </div>
+  <div class="tweaks-row">
+    <div class="tweaks-row-label">Layout dashboard</div>
+    <div class="tweaks-btnrow" data-group="dashLayout"></div>
+  </div>
+  <div class="tweaks-row">
+    <div class="tweaks-row-label">Font Arab</div>
+    <div class="tweaks-btnrow" data-group="arabicFont"></div>
+  </div>
+  <div class="tweaks-row">
+    <div class="tweaks-row-label">Aksen warna</div>
+    <div class="tweaks-btnrow" data-group="accent"></div>
+  </div>
+  <div class="tweaks-row">
+    <div class="tweaks-row-label">Dark mode</div>
+    <div class="tweaks-btnrow" data-group="dark"></div>
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="wire-primitives.jsx"></script>
+<script type="text/babel" src="wire-onboarding.jsx"></script>
+<script type="text/babel" src="wire-dashboard.jsx"></script>
+<script type="text/babel" src="wire-quiz.jsx"></script>
+<script type="text/babel" src="wire-social.jsx"></script>
+
+<script type="text/babel">
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "lesson": "qiraah",
+  "dashLayout": "grid",
+  "arabicFont": "amiri",
+  "accent": "sage",
+  "dark": false
+}/*EDITMODE-END*/;
+
+const LESSONS = { qiraah: 'القراءة', imla: 'الإملاء', balaghah: 'البلاغة' };
+const DASH_LAYOUTS = { list: 'List', grid: 'Grid', path: 'Path' };
+const FONTS = { amiri: 'Amiri', reem: 'Reem Kufi', lateef: 'Lateef' };
+const ACCENTS = {
+  clay:  { accent: '#d97757', accent2: '#4a7fb8', accent3: '#c4a35a' },
+  sage:  { accent: '#6a8a6a', accent2: '#5a6a8a', accent3: '#b89b56' },
+  plum:  { accent: '#8a5a8a', accent2: '#5a6a8a', accent3: '#c4a35a' },
+  ink:   { accent: '#1a1a1a', accent2: '#3a3a3a', accent3: '#6b6b6b' },
+};
+
+function App() {
+  const [tweaks, setTweaks] = React.useState(TWEAKS);
+
+  // Apply accent colors via CSS vars on wire-root
+  React.useEffect(() => {
+    const a = ACCENTS[tweaks.accent] || ACCENTS.clay;
+    const sheet = document.getElementById('accent-override') || (() => {
+      const s = document.createElement('style'); s.id = 'accent-override'; document.head.appendChild(s); return s;
+    })();
+    // update WIRE constant for runtime (re-renders use it on mount; we also redefine at module scope)
+    if (window.WIRE) { window.WIRE.accent = a.accent; window.WIRE.accent2 = a.accent2; window.WIRE.accent3 = a.accent3; }
+    sheet.textContent = `.wire-btn-accent { background: ${a.accent} !important; }`;
+    document.body.classList.toggle('dark-mode', !!tweaks.dark);
+  }, [tweaks]);
+
+  const fontClass = 'font-' + tweaks.arabicFont;
+
+  // Resolve dashboard by tweak
+  const Dash = { list: DashboardList, grid: DashboardGrid, path: DashboardPath }[tweaks.dashLayout];
+
+  // Build tweak buttons
+  React.useEffect(() => {
+    const panel = document.getElementById('tweaks-panel');
+    const groups = {
+      lesson: Object.entries(LESSONS),
+      dashLayout: Object.entries(DASH_LAYOUTS),
+      arabicFont: Object.entries(FONTS),
+      accent: Object.entries(ACCENTS).map(([k]) => [k, k]),
+      dark: [['false', 'Off'], ['true', 'On']],
+    };
+    for (const [group, items] of Object.entries(groups)) {
+      const row = panel.querySelector(`[data-group="${group}"]`);
+      if (!row) continue;
+      row.innerHTML = '';
+      for (const [val, label] of items) {
+        if (group === 'accent') {
+          const sw = document.createElement('div');
+          sw.className = 'tweaks-swatch' + (tweaks.accent === val ? ' active' : '');
+          sw.style.background = ACCENTS[val].accent;
+          sw.title = val;
+          sw.onclick = () => update('accent', val);
+          row.appendChild(sw);
+        } else {
+          const btn = document.createElement('button');
+          btn.className = 'tweaks-btn' + (String(tweaks[group]) === val ? ' active' : '');
+          btn.textContent = label;
+          btn.onclick = () => update(group, group === 'dark' ? val === 'true' : val);
+          row.appendChild(btn);
+        }
+      }
+    }
+  }, [tweaks]);
+
+  function update(key, val) {
+    const next = { ...tweaks, [key]: val };
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [key]: val } }, '*');
+  }
+
+  // Edit mode availability
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      if (!e.data) return;
+      if (e.data.type === '__activate_edit_mode') document.getElementById('tweaks-panel').classList.add('open');
+      if (e.data.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').classList.remove('open');
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const wrapPhone = (Screen) => (
+    <AndroidDevice width={320} height={640}>
+      <Screen font={fontClass}/>
+    </AndroidDevice>
+  );
+
+  return (
+    <DesignCanvas>
+      <DCSection id="onboarding" title="١ · الدخول والتسجيل" subtitle="Login, Register, Pilih Pelajaran">
+        <DCArtboard id="login" label="Masuk / تسجيل الدخول" width={344} height={664}>{wrapPhone(ScreenLogin)}</DCArtboard>
+        <DCArtboard id="register" label="Daftar / إنشاء حساب" width={344} height={664}>{wrapPhone(ScreenRegister)}</DCArtboard>
+        <DCArtboard id="pick" label="Pilih Pelajaran / اختر الدرس" width={344} height={664}>{wrapPhone(ScreenPickLesson)}</DCArtboard>
+      </DCSection>
+
+      <DCSection id="dashboard" title="٢ · لوحة الوحدات · 3 variasi layout" subtitle="List vs Grid vs Path — pilih via Tweaks">
+        <DCArtboard id="dash-list" label="A · List (linear)" width={344} height={664}>
+          <AndroidDevice width={320} height={640}><DashboardList font={fontClass}/></AndroidDevice>
+        </DCArtboard>
+        <DCArtboard id="dash-grid" label="B · Grid (tile)" width={344} height={664}>
+          <AndroidDevice width={320} height={640}><DashboardGrid font={fontClass}/></AndroidDevice>
+        </DCArtboard>
+        <DCArtboard id="dash-path" label="C · Path (perjalanan)" width={344} height={664}>
+          <AndroidDevice width={320} height={640}><DashboardPath font={fontClass}/></AndroidDevice>
+        </DCArtboard>
+        <DCArtboard id="dash-current" label="★ Active (dari Tweaks)" width={344} height={664}>
+          <AndroidDevice width={320} height={640}><Dash font={fontClass}/></AndroidDevice>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="quiz" title="٣ · رحلة الوحدة" subtitle="Intro → Soal (4 jenis) → Hasil">
+        <DCArtboard id="intro" label="Intro Wahdah" width={344} height={664}>{wrapPhone(ScreenIntroUnit)}</DCArtboard>
+        <DCArtboard id="q-mcq" label="Soal A · I'rab MCQ" width={344} height={664}>{wrapPhone(QuizMCQ)}</DCArtboard>
+        <DCArtboard id="q-arr" label="Soal B · Susun Kata" width={344} height={664}>{wrapPhone(QuizArrange)}</DCArtboard>
+        <DCArtboard id="q-match" label="Soal C · Cocokkan" width={344} height={664}>{wrapPhone(QuizMatch)}</DCArtboard>
+        <DCArtboard id="q-img" label="Soal D · Gambar MCQ" width={344} height={664}>{wrapPhone(QuizImageMCQ)}</DCArtboard>
+        <DCArtboard id="result" label="Hasil Wahdah" width={344} height={664}>{wrapPhone(QuizResult)}</DCArtboard>
+      </DCSection>
+
+      <DCSection id="checkpoint" title="٤ · نقطة التفتيش" subtitle="Tes menyeluruh tiap 4 wahdah">
+        <DCArtboard id="ck-intro" label="Checkpoint Intro" width={344} height={664}>{wrapPhone(ScreenCheckpointIntro)}</DCArtboard>
+      </DCSection>
+
+      <DCSection id="social" title="٥ · المتصدرون والحساب" subtitle="3 variasi leaderboard + Profil">
+        <DCArtboard id="lb-podium" label="A · Podium" width={344} height={664}>{wrapPhone(LeaderboardPodium)}</DCArtboard>
+        <DCArtboard id="lb-list" label="B · List" width={344} height={664}>{wrapPhone(LeaderboardList)}</DCArtboard>
+        <DCArtboard id="lb-card" label="C · Card + Grid" width={344} height={664}>{wrapPhone(LeaderboardCard)}</DCArtboard>
+        <DCArtboard id="profile" label="Profil pengguna" width={344} height={664}>{wrapPhone(ScreenProfile)}</DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
