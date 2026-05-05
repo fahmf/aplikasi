@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { BookOpen, Users, School, BarChart3, Settings, GraduationCap } from 'lucide-react'
+import { BookOpen, Users, School, BarChart3, GraduationCap, BookMarked } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -32,7 +32,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          <Link
+            href="/reader"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors font-medium border border-stone-200"
+          >
+            <BookMarked size={14} />
+            Ruang Baca
+          </Link>
           <span className="text-xs text-gray-400">Admin</span>
           <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">A</div>
         </div>
